@@ -25,7 +25,7 @@ This program enables users to send a daily report via email, featuring a simple 
 5. Replace `SMTP_USERNAME` with your email address.
 
 ## Usage
-1. Run the program by executing the `email_daily_report.py` file.
+1. Run the program by executing the `main.py` file.
 2. Enter your email address, recipient's email address, email content, and attach files if needed.
 3. Click on the "Send Email" button.
 4. Follow the prompt to enter your App Password.
