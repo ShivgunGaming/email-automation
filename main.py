@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import messagebox
-from tkinter import simpledialog
 from tkinter import filedialog
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -8,7 +7,6 @@ from email.mime.base import MIMEBase
 from email import encoders
 import smtplib
 import datetime
-import getpass
 import os
 
 SMTP_SERVER = 'smtp.gmail.com'
@@ -20,30 +18,46 @@ class EmailApp:
         self.master = master
         master.title("Email Daily Report")
 
-        self.label_sender = tk.Label(master, text="Your Email Address:")
-        self.label_sender.grid(row=0, column=0, sticky=tk.W)
-        self.entry_sender = tk.Entry(master)
-        self.entry_sender.grid(row=0, column=1)
+        self.frame = tk.Frame(master, bg="#f0f0f0", padx=20, pady=20, bd=2, relief=tk.GROOVE)
+        self.frame.pack()
 
-        self.label_receiver = tk.Label(master, text="Recipient's Email Address:")
-        self.label_receiver.grid(row=1, column=0, sticky=tk.W)
-        self.entry_receiver = tk.Entry(master)
-        self.entry_receiver.grid(row=1, column=1)
+        self.label_sender = tk.Label(self.frame, text="Your Email Address:", bg="#f0f0f0", font=("Arial", 12))
+        self.label_sender.grid(row=0, column=0, sticky=tk.W, padx=(0, 10), pady=5)
+        self.entry_sender = tk.Entry(self.frame, font=("Arial", 12), bd=2, relief=tk.SOLID)
+        self.entry_sender.grid(row=0, column=1, padx=(0, 10), pady=5, sticky=tk.W+tk.E)
 
-        self.label_body = tk.Label(master, text="Email Content:")
-        self.label_body.grid(row=2, column=0, sticky=tk.W)
-        self.text_body = tk.Text(master, width=50, height=10)
-        self.text_body.grid(row=2, column=1)
+        self.label_receiver = tk.Label(self.frame, text="Recipient's Email Address:", bg="#f0f0f0", font=("Arial", 12))
+        self.label_receiver.grid(row=1, column=0, sticky=tk.W, padx=(0, 10), pady=5)
+        self.entry_receiver = tk.Entry(self.frame, font=("Arial", 12), bd=2, relief=tk.SOLID)
+        self.entry_receiver.grid(row=1, column=1, padx=(0, 10), pady=5, sticky=tk.W+tk.E)
 
-        self.label_attachment = tk.Label(master, text="Attachment File(s):")
-        self.label_attachment.grid(row=3, column=0, sticky=tk.W)
-        self.entry_attachment = tk.Entry(master, state='readonly')
-        self.entry_attachment.grid(row=3, column=1)
-        self.button_browse = tk.Button(master, text="Browse", command=self.browse_attachment)
-        self.button_browse.grid(row=3, column=2)
+        self.label_body = tk.Label(self.frame, text="Email Content:", bg="#f0f0f0", font=("Arial", 12))
+        self.label_body.grid(row=2, column=0, sticky=tk.W, padx=(0, 10), pady=5)
+        self.text_body = tk.Text(self.frame, width=50, height=10, font=("Arial", 12), bd=2, relief=tk.SOLID)
+        self.text_body.grid(row=2, column=1, padx=(0, 10), pady=5, sticky=tk.W+tk.E)
 
-        self.button_send = tk.Button(master, text="Send Email", command=self.send_email)
-        self.button_send.grid(row=4, column=0, columnspan=3)
+        self.label_attachment = tk.Label(self.frame, text="Attachment File(s):", bg="#f0f0f0", font=("Arial", 12))
+        self.label_attachment.grid(row=3, column=0, sticky=tk.W, padx=(0, 10), pady=5)
+        self.entry_attachment = tk.Entry(self.frame, state='readonly', font=("Arial", 12), bd=2, relief=tk.SOLID)
+        self.entry_attachment.grid(row=3, column=1, padx=(0, 10), pady=5, sticky=tk.W+tk.E)
+        self.button_browse = tk.Button(self.frame, text="Browse", command=self.browse_attachment, font=("Arial", 10), bg="#4CAF50", fg="white", padx=5)
+        self.button_browse.grid(row=3, column=2, pady=5)
+
+        self.label_password = tk.Label(self.frame, text="SMTP Password:", bg="#f0f0f0", font=("Arial", 12))
+        self.label_password.grid(row=4, column=0, sticky=tk.W, padx=(0, 10), pady=5)
+        self.entry_password = tk.Entry(self.frame, show="*", font=("Arial", 12), bd=2, relief=tk.SOLID)
+        self.entry_password.grid(row=4, column=1, padx=(0, 10), pady=5, sticky=tk.W+tk.E)
+
+        self.button_send = tk.Button(self.frame, text="Send Email", command=self.send_email, font=("Arial", 12), bg="#4CAF50", fg="white", padx=10)
+        self.button_send.grid(row=5, column=0, columnspan=3, pady=10)
+
+        self.button_clear = tk.Button(self.frame, text="Clear", command=self.clear_fields, font=("Arial", 12), bg="#f44336", fg="white", padx=10)
+        self.button_clear.grid(row=6, column=0, columnspan=3, pady=10)
+
+        # Add logo
+        self.logo = tk.PhotoImage(file="email-logo.png")
+        self.logo_label = tk.Label(self.frame, image=self.logo, bg="#f0f0f0")
+        self.logo_label.grid(row=0, column=3, rowspan=4, padx=10)
 
     def browse_attachment(self):
         file_paths = filedialog.askopenfilenames()
@@ -56,15 +70,14 @@ class EmailApp:
         sender_email = self.entry_sender.get()
         receiver_email = self.entry_receiver.get()
         body = self.text_body.get("1.0", tk.END)
+        smtp_password = self.entry_password.get()
+
+        if not all([sender_email, receiver_email, body, smtp_password]):
+            messagebox.showwarning("Missing Information", "Please fill in all required fields.")
+            return
 
         # Generate daily report
         report = generate_daily_report()
-
-        # Print app password guide
-        print_app_password_guide()
-
-        # Prompt for app password
-        smtp_password = simpledialog.askstring("App Password", "Enter your App Password:")
 
         # Get attachment paths
         attachment_paths = self.entry_attachment.get().split(';') if self.entry_attachment.get() else []
@@ -72,8 +85,14 @@ class EmailApp:
         # Send email
         send_email(sender_email, receiver_email, "Daily Report", report + body, SMTP_SERVER, SMTP_PORT, SMTP_USERNAME, smtp_password, attachment_paths)
 
-        # Show confirmation message
-        messagebox.showinfo("Email Sent", "Your daily report email has been sent!")
+    def clear_fields(self):
+        self.entry_sender.delete(0, tk.END)
+        self.entry_receiver.delete(0, tk.END)
+        self.text_body.delete("1.0", tk.END)
+        self.entry_attachment.config(state='normal')
+        self.entry_attachment.delete(0, tk.END)
+        self.entry_attachment.config(state='readonly')
+        self.entry_password.delete(0, tk.END)
 
 def generate_daily_report():
     # Your report generation logic here
@@ -117,17 +136,9 @@ def send_email(sender_email, receiver_email, subject, body, smtp_server, smtp_po
         server.login(smtp_username, smtp_password)
         server.sendmail(sender_email, receiver_email, prepare_email(sender_email, receiver_email, subject, body, attachment_paths))
         server.quit()
-        print("Email sent successfully!")
+        messagebox.showinfo("Email Sent", "Your daily report email has been sent!")
     except Exception as e:
-        print(f"Error: {e}")
-
-def print_app_password_guide():
-    print("To use this program, you need to generate an 'App Password' for your email account.")
-    print("Here's how you can generate an App Password:")
-    print("1. Go to your email account's security settings.")
-    print("2. Look for the option to generate an App Password.")
-    print("3. Select the option and follow the prompts to generate a new App Password.")
-    print("4. Copy the generated App Password and use it as the password when prompted by this program.")
+        messagebox.showerror("Error", f"An error occurred: {e}")
 
 def main():
     root = tk.Tk()
